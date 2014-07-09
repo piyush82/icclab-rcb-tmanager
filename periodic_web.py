@@ -98,7 +98,7 @@ def get_udr(self,token_id,token_metering,user,meters_used,meter_list,func,web_bo
         cnx = mysql.connector.connect(user='icclab',
                                       database='db_cyclops',
                                       password='icclab',
-                                      host='localhost',
+                                      host='160.85.4.235',
                                       port='3306')
         cursor=cnx.cursor()
     except mysql.connector.Error as err:
@@ -165,7 +165,7 @@ def pricing(self,user,meter_list,pricing_list,udr):
         cnx = mysql.connector.connect(user='icclab',
                                       database='db_cyclops',
                                       password='icclab',
-                                      host='localhost',
+                                      host='160.85.4.235',
                                       port='3306')
         cursor=cnx.cursor()
     except mysql.connector.Error as err:
@@ -247,7 +247,7 @@ class MyThread(Thread):
             cnx = mysql.connector.connect(user='icclab',
                                       database='db_cyclops',
                                       password='icclab',
-                                      host='localhost',
+                                      host='160.85.4.235',
                                       port='3306')
             cursor=cnx.cursor()
         except mysql.connector.Error as err:
