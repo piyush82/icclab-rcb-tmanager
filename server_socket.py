@@ -36,7 +36,7 @@ from threading import Thread
 def main(argv):  
     running_threads={}   
     print ("In main before while, running threads: %s" %running_threads) 
-    HOST = '127.0.0.1'   # Symbolic name meaning all available interfaces
+    HOST = '0.0.0.0'   # Symbolic name meaning all available interfaces
     PORT = 9005 # Arbitrary non-privileged port 
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     print("Socket created.")
