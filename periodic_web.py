@@ -26,12 +26,9 @@ Created on Apr 9, 2014
 from threading import Thread
 import sys,os
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "web_ui.settings")
-from django.conf import settings
 import mysql.connector
 from mysql.connector import errorcode
 path=os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..','icclab-rcb'))
-from django.core import urlresolvers
-from django.forms import widgets
 import datetime
 import time
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', 'os_api')))
