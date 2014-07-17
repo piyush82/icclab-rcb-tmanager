@@ -56,7 +56,7 @@ def is_number(s):
         return False
 
 
-def periodic_counter(self,token_id,token_metering,meters_used,meter_list,func,user,time,from_date,from_time,end_date,end_time,user_id_stack,pricing_list):
+def periodic_counter(self,token_id,token_metering,meters_used,meter_list,func,user,time,from_date,from_time,end_date,end_time,user_id_stack,pricing_list,params):
     """
 
     Execute the periodic counter.
@@ -79,21 +79,11 @@ def periodic_counter(self,token_id,token_metering,meters_used,meter_list,func,us
       DateTime: The new start time for the next loop if the duration end is before the end time of the loop.
       
     """        
-    udr,new_time=get_udr(self,token_id,token_metering,user,meters_used,meter_list,func,True,from_date,from_time,end_date,end_time,user_id_stack)
+    udr,new_time=get_udr(self,token_id,token_metering,user,meters_used,meter_list,func,True,from_date,from_time,end_date,end_time,user_id_stack,params)
     price=pricing(self,user,meter_list,pricing_list,udr)
     return new_time
-
-#def get_delta_samples(self,token_data,token_id,user,meter):
-    #delta=0.0
-    #meter2=str(meter)
-    #conn = sqlite3.connect(path+'/db.sqlite3',check_same_thread=False)
-    #cursor = conn.execute('SELECT max(ID) FROM MAIN_MENU_METERSCOUNTER')
-    #last = cursor.fetchone()
-    #samples =list( MetersCounter.objects.filter(user_id=user,meter_name = meter))
-    #last=str(samples[-1])
-    #return last
         
-def get_udr(self,token_id,token_metering,user,meters_used,meter_list,func,web_bool,from_date,from_time,end_date,end_time,user_id_stack):   
+def get_udr(self,token_id,token_metering,user,meters_used,meter_list,func,web_bool,from_date,from_time,end_date,end_time,user_id_stack,params):   
     try:
         cnx = mysql.connector.connect(user='icclab',
                                       database='db_cyclops',
@@ -142,10 +132,14 @@ def get_udr(self,token_id,token_metering,user,meters_used,meter_list,func,web_bo
         data_metercounter = (meters_used[i],user,total[i],unit,date_time)
         cursor.execute(add_metercounter, data_metercounter)
 
-        for i in range(len(delta_list)):
-            for j in range(len(total)):
-                if i==j:
-                    delta_list[i]=total[j]
+        #for i in range(len(delta_list)):
+        #    for j in range(len(total)):
+        #        if i==j:
+        #            delta_list[i]=total[j]
+        
+        for m in range(len(params)):
+            if params[m]==meters_used[i]:
+                delta_list[m]=total[i]
     add_udr = ("INSERT INTO main_menu_udr "
                         "(user_id_id,timestamp,pricing_func_id_id,param1,param2,param3,param4,param5) "
                         "VALUES (%s, %s, %s, %s, %s,%s,%s,%s)")
@@ -279,6 +273,7 @@ class MyThread(Thread):
         self.meters_used=[]
         query = ("SELECT param1,sign1,param2,sign2,param3,sign3,param4,sign4,param5,ID FROM main_menu_pricingfunc WHERE user_id_id=%s")
         data_query=user
+        self.params=[]
         cursor.execute(query,data_query)
         for row in cursor:
             self.pricing_list.append(row[0])
@@ -290,6 +285,11 @@ class MyThread(Thread):
             self.pricing_list.append(row[6])
             self.pricing_list.append(row[7])
             self.pricing_list.append(row[8])
+            self.params.append(row[0])
+            self.params.append(row[2])
+            self.params.append(row[4])
+            self.params.append(row[6])
+            self.params.append(row[8])
             self.func=row[9]  
             print(row)
         print("Inside init thread.")
@@ -313,7 +313,7 @@ class MyThread(Thread):
         print("Inside thread run")
         while not self.cancelled:
             print ("while not cancelled")
-            new_time=periodic_counter(self,self.token_id,self.token_metering,self.meters_used,self.meter_list,self.func,self.user,self.time_f,self.from_date,self.from_time,self.end_date,self.end_time,self.user_id_stack,self.pricing_list)
+            new_time=periodic_counter(self,self.token_id,self.token_metering,self.meters_used,self.meter_list,self.func,self.user,self.time_f,self.from_date,self.from_time,self.end_date,self.end_time,self.user_id_stack,self.pricing_list,self.params)
             if new_time=="/":
                 self.from_time=self.end_time
                 self.from_date=self.end_date
