@@ -38,7 +38,7 @@ from threading import Timer
 
 dir_path=os.path.join(os.path.dirname( __file__ ), '..',)
 config = {}
-execfile(dir_path+"/config.conf", config) 
+execfile("config.conf", config) 
 
 def is_number(s):
     """
