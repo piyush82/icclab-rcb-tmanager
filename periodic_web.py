@@ -28,7 +28,6 @@ import sys,os
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "web_ui.settings")
 import mysql.connector
 from mysql.connector import errorcode
-path=os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..','icclab-rcb'))
 import datetime
 import time
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', 'os_api')))
@@ -36,6 +35,10 @@ from os_api import ceilometer_api
 from os_api import keystone_api
 from time import gmtime, strftime, strptime
 from threading import Timer
+
+dir_path=os.path.join(os.path.dirname( __file__ ), '..',)
+config = {}
+execfile(dir_path+"/config.conf", config) 
 
 def is_number(s):
     """
@@ -85,11 +88,11 @@ def periodic_counter(self,token_id,token_metering,meters_used,meter_list,func,us
         
 def get_udr(self,token_id,token_metering,user,meters_used,meter_list,func,web_bool,from_date,from_time,end_date,end_time,user_id_stack,params):   
     try:
-        cnx = mysql.connector.connect(user='icclab',
+        cnx = mysql.connector.connect(user=config["USER"],
                                       database='db_cyclops',
-                                      password='icclab',
-                                      host='160.85.4.235',
-                                      port='3306')
+                                      password=config["PASSWORD"],
+                                      host=config["HOST"],
+                                      port=config["PORT_DB"])
         cursor=cnx.cursor()
     except mysql.connector.Error as err:
         if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
@@ -132,11 +135,6 @@ def get_udr(self,token_id,token_metering,user,meters_used,meter_list,func,web_bo
         data_metercounter = (meters_used[i],user,total[i],unit,date_time)
         cursor.execute(add_metercounter, data_metercounter)
 
-        #for i in range(len(delta_list)):
-        #    for j in range(len(total)):
-        #        if i==j:
-        #            delta_list[i]=total[j]
-        
         for m in range(len(params)):
             if params[m]==meters_used[i]:
                 delta_list[m]=total[i]
@@ -156,11 +154,11 @@ def get_udr(self,token_id,token_metering,user,meters_used,meter_list,func,web_bo
 
 def pricing(self,user,meter_list,pricing_list,udr):
     try:
-        cnx = mysql.connector.connect(user='icclab',
+        cnx = mysql.connector.connect(user=config["USER"],
                                       database='db_cyclops',
-                                      password='icclab',
-                                      host='160.85.4.235',
-                                      port='3306')
+                                      password=config["PASSWORD"],
+                                      host=config["HOST"],
+                                      port=config["PORT_DB"])
         cursor=cnx.cursor()
     except mysql.connector.Error as err:
         if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
@@ -236,13 +234,13 @@ def pricing(self,user,meter_list,pricing_list,udr):
 class MyThread(Thread):
     def __init__(self, username,password,domain,project,user,time_f,from_date,from_time,end_date,end_time,user_id_stack,name):
         super(MyThread, self).__init__()
-        auth_uri = 'http://160.85.4.10:5000'
+        auth_uri = config["AUTH_URI"]
         try:
-            cnx = mysql.connector.connect(user='icclab',
+            cnx = mysql.connector.connect(user=config["USER"],
                                       database='db_cyclops',
-                                      password='icclab',
-                                      host='160.85.4.235',
-                                      port='3306')
+                                      password=config["PASSWORD"],
+                                      host=config["HOST"],
+                                      port=config["PORT_DB"])
             cursor=cnx.cursor()
         except mysql.connector.Error as err:
             if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
