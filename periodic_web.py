@@ -25,6 +25,7 @@ Created on Apr 9, 2014
 
 from threading import Thread
 import sys,os
+from sympy.core import sympify
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "web_ui.settings")
 import mysql.connector
 from mysql.connector import errorcode
@@ -59,7 +60,7 @@ def is_number(s):
         return False
 
 
-def periodic_counter(self,token_id,token_metering,meters_used,meter_list,func,user,time,from_date,from_time,end_date,end_time,user_id_stack,pricing_list,params):
+def periodic_counter(self,token_id,token_metering,meters_used,meter_list,func,user,time,from_date,from_time,end_date,end_time,user_id_stack,pricing_list,params,unit):
     """
 
     Execute the periodic counter.
@@ -83,7 +84,7 @@ def periodic_counter(self,token_id,token_metering,meters_used,meter_list,func,us
       
     """        
     udr,new_time=get_udr(self,token_id,token_metering,user,meters_used,meter_list,func,True,from_date,from_time,end_date,end_time,user_id_stack,params)
-    price=pricing(self,user,meter_list,pricing_list,udr)
+    price=pricing(self,user,meter_list,pricing_list,udr,unit)
     return new_time
         
 def get_udr(self,token_id,token_metering,user,meters_used,meter_list,func,web_bool,from_date,from_time,end_date,end_time,user_id_stack,params):   
@@ -152,7 +153,7 @@ def get_udr(self,token_id,token_metering,user,meters_used,meter_list,func,web_bo
 
 
 
-def pricing(self,user,meter_list,pricing_list,udr):
+def pricing(self,user,meter_list,pricing_list,udr,unit):
     try:
         cnx = mysql.connector.connect(user=config["USER"],
                                       database='db_cyclops',
@@ -189,34 +190,23 @@ def pricing(self,user,meter_list,pricing_list,udr):
         while j<len(meter_list):
             if pricing_list[i]==meter_list[j]["meter-name"]:
                 pricing_list[i]=udr_list[k]
-                k+=1
             else:
                 j=j+1 
-            
+        if i%2==0:
+            k+=1
+    print pricing_list        
     price=0.0 
-            
+    str_expr=""
     for i in range(len(pricing_list)):
-        if i==0:   
-            if is_number(str(pricing_list[i])):    
-                price=price+float(str(pricing_list[i]))
- 
-        if i%2!=0:
-            if pricing_list[i] in ["+","-","*","/","%"]:
-                if is_number(str(pricing_list[i+1])):
-                    x=float(str(pricing_list[i+1]))                             
-                else:
-                    break                          
-                if pricing_list[i]=="+":
-                    price=price+x
-                if pricing_list[i]=="-": 
-                    price=price-x
-                if pricing_list[i]=="*":
-                    price=price*x
-                if pricing_list[i]=="/":
-                    if x!=0:
-                        price=price/x
-                if pricing_list[i]=="%":
-                    price=price*x/100.0
+        if i!=None:
+            str_expr+=str(pricing_list[i])
+        else:
+            break
+    print(str_expr)
+    expr=sympify(str_expr)   
+    price=expr.evalf()
+    print price
+    price=price*float(unit)   
     date_time=datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     add_pricecdr = ("INSERT INTO main_menu_pricecdr "
                "(price,timestamp,user_id_id,pricing_func_id_id) "
@@ -258,8 +248,7 @@ class MyThread(Thread):
         self.cancelled = False
         self.token_id=token_data["token_id"] 
         self.token_metering=token_data["metering"]
-        self.user=user
-        #self.user=StackUser.objects.get(id=user)       
+        self.user=user    
         self.from_date=from_date
         self.from_time=from_time
         self.end_date=end_date
@@ -269,7 +258,7 @@ class MyThread(Thread):
         status_meter_list, self.meter_list = ceilometer_api.get_meter_list(self.token_id, self.token_metering)                              
         self.pricing_list=[]
         self.meters_used=[]
-        query = ("SELECT param1,sign1,param2,sign2,param3,sign3,param4,sign4,param5,ID FROM main_menu_pricingfunc WHERE user_id_id=%s")
+        query = ("SELECT param1,sign1,param2,sign2,param3,sign3,param4,sign4,param5,ID,unit FROM main_menu_pricingfunc WHERE user_id_id=%s")
         data_query=user
         self.params=[]
         cursor.execute(query,data_query)
@@ -289,6 +278,7 @@ class MyThread(Thread):
             self.params.append(row[6])
             self.params.append(row[8])
             self.func=row[9]  
+            self.unit=row[10]
             print(row)
         print("Inside init thread.")
         cnx.commit()
@@ -311,7 +301,7 @@ class MyThread(Thread):
         print("Inside thread run")
         while not self.cancelled:
             print ("while not cancelled")
-            new_time=periodic_counter(self,self.token_id,self.token_metering,self.meters_used,self.meter_list,self.func,self.user,self.time_f,self.from_date,self.from_time,self.end_date,self.end_time,self.user_id_stack,self.pricing_list,self.params)
+            new_time=periodic_counter(self,self.token_id,self.token_metering,self.meters_used,self.meter_list,self.func,self.user,self.time_f,self.from_date,self.from_time,self.end_date,self.end_time,self.user_id_stack,self.pricing_list,self.params,self.unit)
             if new_time=="/":
                 self.from_time=self.end_time
                 self.from_date=self.end_date
