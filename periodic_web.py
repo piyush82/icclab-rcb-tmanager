@@ -84,7 +84,7 @@ def periodic_counter(self,token_id,token_metering,meters_used,meter_list,func,us
       
     """        
     udr,new_time=get_udr(self,token_id,token_metering,user,meters_used,meter_list,func,True,from_date,from_time,end_date,end_time,user_id_stack,params)
-    price=pricing(self,user,meter_list,pricing_list,udr,unit)
+    price=pricing(self,user,meters_used,pricing_list,udr,unit)
     return new_time
         
 def get_udr(self,token_id,token_metering,user,meters_used,meter_list,func,web_bool,from_date,from_time,end_date,end_time,user_id_stack,params):   
@@ -153,7 +153,7 @@ def get_udr(self,token_id,token_metering,user,meters_used,meter_list,func,web_bo
 
 
 
-def pricing(self,user,meter_list,pricing_list,udr,unit):
+def pricing(self,user,meters_used,pricing_list,udr,unit):
     try:
         cnx = mysql.connector.connect(user=config["USER"],
                                       database='db_cyclops',
@@ -173,7 +173,7 @@ def pricing(self,user,meter_list,pricing_list,udr,unit):
     cursor.execute(query,data_query)
     for row in cursor:
         func_id=row[0]
-     
+    price_helper_list=copy.copy(pricing_list) 
     udr_list=[]
     udr_list.append(udr['param1'])
     udr_list.append(udr['param2'])
@@ -186,12 +186,8 @@ def pricing(self,user,meter_list,pricing_list,udr,unit):
             
     k=0
     for i in range(len(pricing_list)):
-        j=0
-        while j<len(meter_list):
-            if pricing_list[i]==meter_list[j]["meter-name"]:
-                pricing_list[i]=udr_list[k]
-            else:
-                j=j+1 
+        if pricing_list[i] in meters_used:
+            price_helper_list[i]=udr_list[k]
         if i%2==0:
             k+=1
     print pricing_list        
@@ -199,7 +195,7 @@ def pricing(self,user,meter_list,pricing_list,udr,unit):
     str_expr=""
     for i in range(len(pricing_list)):
         if i!=None:
-            str_expr+=str(pricing_list[i])
+            str_expr+=str(price_helper_list[i])
         else:
             break
     print(str_expr)
