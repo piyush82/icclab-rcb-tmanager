@@ -26,6 +26,7 @@ Created on Apr 9, 2014
 from threading import Thread
 import sys,os
 from sympy.core import sympify
+import copy
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "web_ui.settings")
 import mysql.connector
 from mysql.connector import errorcode
